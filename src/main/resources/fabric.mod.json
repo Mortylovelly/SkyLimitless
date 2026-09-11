@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "skylimitless",
+  "version": "${version}",
+  "name": "SkyLimitless",
+  "description": "Raises the Minecraft world height limit beyond the vanilla limit.",
+  "authors": [
+    "Mortylovelly"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/skylimitless/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.mortylovelly.skylimitless.SkyLimitless"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
