@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.mortylovelly.skylimitless.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "RegistryLoaderMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
