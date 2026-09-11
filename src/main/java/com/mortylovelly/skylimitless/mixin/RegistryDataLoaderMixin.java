@@ -2,81 +2,55 @@ package com.mortylovelly.skylimitless.mixin;
 
 import com.mortylovelly.skylimitless.SkyLimitlessConfig;
 import com.mojang.logging.LogUtils;
-import net.minecraft.core.Holder;
-import net.minecraft.core.RegistrationInfo;
-import net.minecraft.core.WritableRegistry;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.resources.RegistryDataLoader;
-import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArgs;
-import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-import java.util.OptionalLong;
-
-@Mixin(RegistryDataLoader.class)
+@Mixin(DimensionType.class)
 public abstract class RegistryDataLoaderMixin {
     private static final Logger SKY_LIMITLESS_LOGGER = LogUtils.getLogger();
 
-    @ModifyArgs(
-            method = "loadElementFromResource",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/core/WritableRegistry;register(Lnet/minecraft/resources/ResourceKey;Ljava/lang/Object;Lnet/minecraft/core/RegistrationInfo;)Lnet/minecraft/core/Holder$Reference;"
-            )
-    )
-    private static void skylimitless$changeOverworldHeight(Args args) {
-        Object keyObject = args.get(0);
-        Object valueObject = args.get(1);
+    @Unique
+    private static final ThreadLocal<Boolean> SKY_LIMITLESS_IS_OVERWORLD = new ThreadLocal<>();
 
-        if (!(keyObject instanceof ResourceKey<?> key)) {
-            return;
+    @ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+    private int skylimitless$captureMinY(int minY) {
+        SKY_LIMITLESS_IS_OVERWORLD.set(minY == SkyLimitlessConfig.MIN_WORLD_Y);
+        return minY;
+    }
+
+    @ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true, ordinal = 1)
+    private int skylimitless$changeHeight(int height) {
+        if (!Boolean.TRUE.equals(SKY_LIMITLESS_IS_OVERWORLD.get()) || height != 384) {
+            return height;
         }
 
-        if (!(valueObject instanceof DimensionType original)) {
-            return;
+        int newHeight = SkyLimitlessConfig.getEffectiveHeight();
+        if (newHeight <= height) {
+            return height;
         }
 
-        if (!key.equals(BuiltinDimensionTypes.OVERWORLD)) {
-            return;
-        }
-
-        int height = SkyLimitlessConfig.getEffectiveHeight();
-        int logicalHeight = Math.max(original.logicalHeight(), height);
-
-        if (original.height() == height && original.logicalHeight() == logicalHeight) {
-            return;
-        }
-
-        DimensionType adjusted = new DimensionType(
-                original.fixedTime(),
-                original.hasSkyLight(),
-                original.hasCeiling(),
-                original.ultraWarm(),
-                original.natural(),
-                original.coordinateScale(),
-                original.bedWorks(),
-                original.respawnAnchorWorks(),
-                original.minY(),
-                height,
-                logicalHeight,
-                original.infiniburn(),
-                original.effectsLocation(),
-                original.ambientLight(),
-                original.monsterSettings()
-        );
-
-        args.set(1, adjusted);
         SKY_LIMITLESS_LOGGER.info(
-                "Expanded Overworld height: minY={}, height={}, logicalHeight={}, highestPlaceableY={}",
-                adjusted.minY(),
-                adjusted.height(),
-                adjusted.logicalHeight(),
-                adjusted.minY() + adjusted.height() - 1
+                "Expanded Overworld DimensionType height: minY={}, height={}, highestPlaceableY={}",
+                SkyLimitlessConfig.MIN_WORLD_Y,
+                newHeight,
+                SkyLimitlessConfig.getHighestPlaceableY()
         );
+        return newHeight;
+    }
+
+    @ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true, ordinal = 2)
+    private int skylimitless$changeLogicalHeight(int logicalHeight) {
+        if (!Boolean.TRUE.equals(SKY_LIMITLESS_IS_OVERWORLD.get()) || logicalHeight < 384) {
+            SKY_LIMITLESS_IS_OVERWORLD.remove();
+            return logicalHeight;
+        }
+
+        int newLogicalHeight = Math.max(logicalHeight, SkyLimitlessConfig.getEffectiveHeight());
+        SKY_LIMITLESS_IS_OVERWORLD.remove();
+        return newLogicalHeight;
     }
 }
