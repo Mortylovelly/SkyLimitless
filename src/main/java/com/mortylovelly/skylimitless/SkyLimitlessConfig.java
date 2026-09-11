@@ -1,13 +1,13 @@
 package com.mortylovelly.skylimitless;
 
+import net.neoforged.fml.loading.FMLPaths;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
-
-import net.fabricmc.loader.api.FabricLoader;
 
 public final class SkyLimitlessConfig {
     public static final int MIN_WORLD_Y = -64;
@@ -16,8 +16,7 @@ public final class SkyLimitlessConfig {
     public static final int MAX_REQUESTED_TOP_Y = 4000;
     public static final int SECTION_SIZE = 16;
 
-    private static final Path CONFIG_PATH = FabricLoader.getInstance()
-            .getConfigDir()
+    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get()
             .resolve("skylimitless.properties");
 
     private static int requestedTopY = 500;
@@ -28,6 +27,7 @@ public final class SkyLimitlessConfig {
 
     public static void load() {
         Properties properties = new Properties();
+
         if (Files.exists(CONFIG_PATH)) {
             try (InputStream input = Files.newInputStream(CONFIG_PATH)) {
                 properties.load(input);
@@ -69,10 +69,6 @@ public final class SkyLimitlessConfig {
 
     public static int getHighestPlaceableY() {
         return effectiveTopY - 1;
-    }
-
-    public static Path getConfigPath() {
-        return CONFIG_PATH;
     }
 
     private static int parseRequestedTopY(String value, int fallback) {
