@@ -1,20 +1,21 @@
 package com.mortylovelly.skylimitless;
 
-import net.fabricmc.api.ModInitializer;
+import com.mojang.logging.LogUtils;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class SkyLimitless implements ModInitializer {
+@Mod(SkyLimitless.MOD_ID)
+public final class SkyLimitless {
     public static final String MOD_ID = "skylimitless";
-    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final Logger LOGGER = LogUtils.getLogger();
 
-    @Override
-    public void onInitialize() {
+    public SkyLimitless() {
         SkyLimitlessConfig.load();
-        SkyLimitlessCommand.register();
+        NeoForge.EVENT_BUS.addListener(SkyLimitlessCommand::register);
 
         LOGGER.info(
-                "SkyLimitless loaded: requested top Y={}, effective top Y={}, highest placeable Y={}",
+                "SkyLimitless NeoForge loaded: requested top Y={}, effective top Y={}, highest placeable Y={}",
                 SkyLimitlessConfig.getRequestedTopY(),
                 SkyLimitlessConfig.getEffectiveTopY(),
                 SkyLimitlessConfig.getHighestPlaceableY()
