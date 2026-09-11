@@ -1,15 +1,14 @@
 package com.mortylovelly.skylimitless.mixin;
 
 import com.mortylovelly.skylimitless.SkyLimitlessConfig;
-import com.mojang.asm.mixin.injection.At;
-import com.mojang.asm.mixin.injection.ModifyArgs;
-import com.mojang.asm.mixin.injection.invoke.arg.Args;
-import net.minecraft.registry.MutableRegistry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryLoader;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.dimension.DimensionTypes;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(RegistryLoader.class)
 public abstract class RegistryLoaderMixin {
