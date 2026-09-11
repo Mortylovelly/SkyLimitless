@@ -10,6 +10,14 @@ public class SkyLimitless implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        LOGGER.info("SkyLimitless loaded!");
+        SkyLimitlessConfig.load();
+        SkyLimitlessCommand.register();
+
+        LOGGER.info(
+                "SkyLimitless loaded: requested top Y={}, effective top Y={}, highest placeable Y={}",
+                SkyLimitlessConfig.getRequestedTopY(),
+                SkyLimitlessConfig.getEffectiveTopY(),
+                SkyLimitlessConfig.getHighestPlaceableY()
+        );
     }
 }
