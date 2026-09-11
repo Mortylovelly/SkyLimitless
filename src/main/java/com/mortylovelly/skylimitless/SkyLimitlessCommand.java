@@ -22,8 +22,10 @@ public final class SkyLimitlessCommand {
                                                 SkyLimitlessConfig.MAX_REQUESTED_TOP_Y))
                                         .executes(context -> setHeight(
                                                 context.getSource(),
-                                                IntegerArgumentType.getInteger(context, "top_y"))))
+                                                IntegerArgumentType.getInteger(context, "top_y")))
+                                )
                                 .executes(context -> status(context.getSource()))
+                        )
         );
     }
 
