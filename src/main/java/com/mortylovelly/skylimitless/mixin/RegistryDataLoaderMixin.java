@@ -17,13 +17,13 @@ public abstract class RegistryDataLoaderMixin {
     private static final ThreadLocal<Boolean> SKY_LIMITLESS_IS_OVERWORLD = new ThreadLocal<>();
 
     @ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true, ordinal = 0)
-    private int skylimitless$captureMinY(int minY) {
+    private static int skylimitless$captureMinY(int minY) {
         SKY_LIMITLESS_IS_OVERWORLD.set(minY == SkyLimitlessConfig.MIN_WORLD_Y);
         return minY;
     }
 
     @ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true, ordinal = 1)
-    private int skylimitless$changeHeight(int height) {
+    private static int skylimitless$changeHeight(int height) {
         if (!Boolean.TRUE.equals(SKY_LIMITLESS_IS_OVERWORLD.get()) || height != 384) {
             return height;
         }
@@ -43,7 +43,7 @@ public abstract class RegistryDataLoaderMixin {
     }
 
     @ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true, ordinal = 2)
-    private int skylimitless$changeLogicalHeight(int logicalHeight) {
+    private static int skylimitless$changeLogicalHeight(int logicalHeight) {
         if (!Boolean.TRUE.equals(SKY_LIMITLESS_IS_OVERWORLD.get()) || logicalHeight < 384) {
             SKY_LIMITLESS_IS_OVERWORLD.remove();
             return logicalHeight;
