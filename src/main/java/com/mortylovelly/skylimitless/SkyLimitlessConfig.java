@@ -20,8 +20,8 @@ public final class SkyLimitlessConfig {
             .getConfigDir()
             .resolve("skylimitless.properties");
 
-    private static int requestedTopY = 500;
-    private static int effectiveTopY = 512;
+    private static int requestedTopY = 2000;
+    private static int effectiveTopY = 2000;
 
     private SkyLimitlessConfig() {
     }
@@ -31,13 +31,13 @@ public final class SkyLimitlessConfig {
         if (Files.exists(CONFIG_PATH)) {
             try (InputStream input = Files.newInputStream(CONFIG_PATH)) {
                 properties.load(input);
-                requestedTopY = parseRequestedTopY(properties.getProperty("requested_top_y"), 500);
+                requestedTopY = parseRequestedTopY(properties.getProperty("requested_top_y"), 2000);
             } catch (IOException exception) {
                 SkyLimitless.LOGGER.warn("Could not read config {}; using safe default.", CONFIG_PATH, exception);
-                requestedTopY = 500;
+                requestedTopY = 2000;
             }
         } else {
-            requestedTopY = 500;
+            requestedTopY = 2000;
         }
 
         effectiveTopY = roundTopUpToSection(requestedTopY);
