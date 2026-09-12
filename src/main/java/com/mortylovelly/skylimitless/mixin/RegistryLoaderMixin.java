@@ -1,56 +1,61 @@
 package com.mortylovelly.skylimitless.mixin;
 
 import com.mortylovelly.skylimitless.SkyLimitlessConfig;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryLoader;
 import net.minecraft.world.dimension.DimensionType;
-import org.spongepowered.asm.mixin.Final;
+import net.minecraft.world.dimension.DimensionTypes;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
-@Mixin(DimensionType.class)
+@Mixin(RegistryLoader.class)
 public abstract class RegistryLoaderMixin {
-    @Shadow @Final @Mutable
-    private int height;
+    @ModifyArgs(
+            method = "load(Lnet/minecraft/registry/RegistryOps$RegistryInfoGetter;Lnet/minecraft/resource/ResourceManager;Lnet/minecraft/registry/RegistryKey;Lnet/minecraft/registry/MutableRegistry;Lcom/mojang/serialization/Decoder;Ljava/util/Map;)V",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/registry/MutableRegistry;add(Lnet/minecraft/registry/RegistryKey;Ljava/lang/Object;Lcom/mojang/serialization/Lifecycle;)Lnet/minecraft/registry/entry/RegistryEntry$Reference;"
+            )
+    )
+    private static void skylimitless$changeOverworldHeight(Args args) {
+        Object keyObject = args.get(0);
+        Object valueObject = args.get(1);
 
-    @Shadow @Final @Mutable
-    private int logicalHeight;
-
-    @Shadow @Final
-    private int minY;
-
-    @Shadow @Final
-    private boolean hasSkyLight;
-
-    @Shadow @Final
-    private boolean hasCeiling;
-
-    @Shadow @Final
-    private boolean ultrawarm;
-
-    @Shadow @Final
-    private boolean natural;
-
-    @Shadow @Final
-    private double coordinateScale;
-
-    @Shadow @Final
-    private boolean bedWorks;
-
-    @Inject(method = "<init>", at = @At("RETURN"))
-    private void skylimitless$changeOverworldHeight(CallbackInfo ci) {
-        if (minY != -64 || height != 384 || !hasSkyLight || hasCeiling || ultrawarm || !natural || coordinateScale != 1.0D || !bedWorks) {
+        if (!(keyObject instanceof RegistryKey<?> key)) {
             return;
         }
 
-        int effectiveHeight = SkyLimitlessConfig.getEffectiveHeight();
-        if (effectiveHeight == 384) {
+        if (!key.equals(DimensionTypes.OVERWORLD) || !(valueObject instanceof DimensionType original)) {
             return;
         }
 
-        height = effectiveHeight;
-        logicalHeight = Math.max(logicalHeight, effectiveHeight);
+        int height = SkyLimitlessConfig.getEffectiveHeight();
+        int logicalHeight = Math.max(original.logicalHeight(), height);
+
+        if (original.height() == height && original.logicalHeight() == logicalHeight) {
+            return;
+        }
+
+        DimensionType adjusted = new DimensionType(
+                original.fixedTime(),
+                original.hasSkyLight(),
+                original.hasCeiling(),
+                original.ultrawarm(),
+                original.natural(),
+                original.coordinateScale(),
+                original.bedWorks(),
+                original.respawnAnchorWorks(),
+                original.minY(),
+                height,
+                logicalHeight,
+                original.infiniburn(),
+                original.effects(),
+                original.ambientLight(),
+                original.monsterSettings()
+        );
+
+        args.set(1, adjusted);
     }
 }
