@@ -1,12 +1,22 @@
 package com.mortylovelly.skylimitless;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.datafixers.util.Pair;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.Heightmap;
+import net.minecraft.world.biome.BiomeKeys;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.server.world.ServerWorld;
 
 public final class SkyLimitlessCommand {
+    private static final int MOUNTAIN_SEARCH_RADIUS_BLOCKS = 128;
+    private static final int MOUNTAIN_SAMPLE_STEP = 8;
+
     private SkyLimitlessCommand() {
     }
 
@@ -30,6 +40,13 @@ public final class SkyLimitlessCommand {
                                                 SkyLimitlessConfig.MIN_MOUNTAIN_HEIGHT,
                                                 SkyLimitlessConfig.MAX_MOUNTAIN_HEIGHT))
                                         .executes(context -> setMountainHeight(
+                                                context.getSource(),
+                                                IntegerArgumentType.getInteger(context, "height")))))
+                        .then(CommandManager.literal("findmountain")
+                                .then(CommandManager.argument("height", IntegerArgumentType.integer(
+                                                SkyLimitlessConfig.MIN_MOUNTAIN_HEIGHT,
+                                                SkyLimitlessConfig.MAX_MOUNTAIN_HEIGHT))
+                                        .executes(context -> findMountain(
                                                 context.getSource(),
                                                 IntegerArgumentType.getInteger(context, "height")))))
         ));
@@ -112,6 +129,72 @@ public final class SkyLimitlessCommand {
                 "Saved SkyLimitless mountain height: " + height
                         + ". It will affect newly generated Overworld chunks after the next world restart."
         ), false);
+        return 1;
+    }
+
+    private static int findMountain(ServerCommandSource source, int minimumHeight) {
+        if (source.getWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) {
+            source.sendError(Text.literal("High mountain search is available only in the Overworld."));
+            return 0;
+        }
+
+        ServerWorld world = source.getWorld();
+        BlockPos origin = BlockPos.ofFloored(source.getPosition());
+        Pair<BlockPos, net.minecraft.registry.entry.RegistryEntry<net.minecraft.world.biome.Biome>> located =
+                world.locateBiome(
+                        entry -> entry.matchesKey(BiomeKeys.JAGGED_PEAKS),
+                        origin,
+                        4096,
+                        32,
+                        32
+                );
+
+        if (located == null) {
+            source.sendError(Text.literal(
+                    "No jagged peaks biome could be found within 4096 blocks."
+            ));
+            return 0;
+        }
+
+        BlockPos center = located.getFirst();
+        int centerChunkX = center.getX() >> 4;
+        int centerChunkZ = center.getZ() >> 4;
+        int radiusChunks = MOUNTAIN_SEARCH_RADIUS_BLOCKS >> 4;
+        int bestY = Integer.MIN_VALUE;
+        int bestX = center.getX();
+        int bestZ = center.getZ();
+
+        for (int chunkX = centerChunkX - radiusChunks; chunkX <= centerChunkX + radiusChunks; chunkX++) {
+            for (int chunkZ = centerChunkZ - radiusChunks; chunkZ <= centerChunkZ + radiusChunks; chunkZ++) {
+                Chunk chunk = world.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true);
+                for (int localX = 0; localX < 16; localX += MOUNTAIN_SAMPLE_STEP) {
+                    for (int localZ = 0; localZ < 16; localZ += MOUNTAIN_SAMPLE_STEP) {
+                        int x = (chunkX << 4) + localX;
+                        int z = (chunkZ << 4) + localZ;
+                        int y = chunk.sampleHeightmap(Heightmap.Type.WORLD_SURFACE, localX, localZ);
+                        if (y > bestY) {
+                            bestY = y;
+                            bestX = x;
+                            bestZ = z;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (bestY < minimumHeight) {
+            source.sendError(Text.literal(
+                    "No mountain at least " + minimumHeight + " blocks high was found near the located jagged peaks. Highest terrain found: "
+                            + bestY + " Y. Try a new area or generate farther away."
+            ));
+            return 0;
+        }
+
+        int teleportY = Math.min(bestY + 2, SkyLimitlessConfig.getHighestPlaceableY() - 1);
+        source.sendFeedback(() -> Text.literal(
+                "Found a mountain with terrain height " + bestY + " Y at " + bestX + ", " + bestZ + ". Teleporting there."
+        ), false);
+        source.getPlayerOrThrow().teleport(world, bestX + 0.5D, teleportY, bestZ + 0.5D, source.getPlayerOrThrow().getYaw(), source.getPlayerOrThrow().getPitch());
         return 1;
     }
 }
