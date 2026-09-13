@@ -3,7 +3,7 @@
   "id": "skylimitless",
   "version": "${version}",
   "name": "SkyLimitless",
-  "description": "Raises the Minecraft world height limit safely while preserving the vanilla bottom Y coordinate.",
+  "description": "Raises the Minecraft world height limit and adds configurable taller vanilla Overworld mountains for newly generated terrain.",
   "authors": [
     "Mortylovelly"
   ],
