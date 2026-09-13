@@ -2,6 +2,8 @@ package com.mortylovelly.skylimitless.mixin;
 
 import com.mortylovelly.skylimitless.MountainHeightDensityFunction;
 import com.mortylovelly.skylimitless.SkyLimitlessConfig;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryEntryLookup;
 import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
 import net.minecraft.world.gen.densityfunction.DensityFunction;
 import net.minecraft.world.gen.noise.NoiseConfig;
@@ -26,23 +28,18 @@ public abstract class NoiseConfigMixin {
             at = @At("RETURN")
     )
     private static void skylimitless$scaleOverworldMountains(
-            Object registryLookup,
-            Object chunkGeneratorSettingsKey,
+            RegistryEntryLookup.RegistryLookup registryLookup,
+            RegistryKey<ChunkGeneratorSettings> chunkGeneratorSettingsKey,
             long legacyWorldSeed,
             CallbackInfoReturnable<NoiseConfig> cir
     ) {
-        if (!(chunkGeneratorSettingsKey instanceof net.minecraft.registry.RegistryKey<?> key)) {
+        if (!chunkGeneratorSettingsKey.equals(ChunkGeneratorSettings.OVERWORLD)
+                && !chunkGeneratorSettingsKey.equals(ChunkGeneratorSettings.LARGE_BIOMES)
+                && !chunkGeneratorSettingsKey.equals(ChunkGeneratorSettings.AMPLIFIED)) {
             return;
         }
 
-        if (!key.equals(ChunkGeneratorSettings.OVERWORLD)
-                && !key.equals(ChunkGeneratorSettings.LARGE_BIOMES)
-                && !key.equals(ChunkGeneratorSettings.AMPLIFIED)) {
-            return;
-        }
-
-        NoiseConfig config = cir.getReturnValue();
-        NoiseConfigMixin accessor = (NoiseConfigMixin) (Object) config;
+        NoiseConfigMixin accessor = (NoiseConfigMixin) (Object) cir.getReturnValue();
         NoiseRouter router = accessor.noiseRouter;
 
         int mountainHeight = SkyLimitlessConfig.getMountainHeight();
