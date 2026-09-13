@@ -4,8 +4,7 @@
   "package": "com.mortylovelly.skylimitless.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "RegistryLoaderMixin",
-    "NoiseConfigMixin"
+    "RegistryLoaderMixin"
   ],
   "injectors": {
     "defaultRequire": 1
