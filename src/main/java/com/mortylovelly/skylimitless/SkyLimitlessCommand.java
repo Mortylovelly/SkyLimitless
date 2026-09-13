@@ -1,6 +1,8 @@
 package com.mortylovelly.skylimitless;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
@@ -133,7 +135,7 @@ public final class SkyLimitlessCommand {
         return 1;
     }
 
-    private static int findMountain(ServerCommandSource source, int minimumHeight) {
+    private static int findMountain(ServerCommandSource source, int minimumHeight) throws CommandSyntaxException {
         if (source.getWorld().getRegistryKey() != World.OVERWORLD) {
             source.sendError(Text.literal("High mountain search is available only in the Overworld."));
             return 0;
