@@ -1,10 +1,10 @@
 package com.mortylovelly.skylimitless;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.registry.tag.BiomeTags;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
@@ -12,7 +12,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeKeys;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
 
@@ -145,7 +144,7 @@ public final class SkyLimitlessCommand {
         BlockPos origin = BlockPos.ofFloored(source.getPosition());
         Pair<BlockPos, net.minecraft.registry.entry.RegistryEntry<net.minecraft.world.biome.Biome>> located =
                 world.locateBiome(
-                        entry -> entry.matchesKey(BiomeKeys.JAGGED_PEAKS),
+                        entry -> entry.isIn(BiomeTags.IS_MOUNTAIN),
                         origin,
                         4096,
                         32,
@@ -154,7 +153,7 @@ public final class SkyLimitlessCommand {
 
         if (located == null) {
             source.sendError(Text.literal(
-                    "No jagged peaks biome could be found within 4096 blocks."
+                    "No mountain biome could be found within 4096 blocks."
             ));
             return 0;
         }
@@ -187,7 +186,7 @@ public final class SkyLimitlessCommand {
 
         if (bestY < minimumHeight) {
             source.sendError(Text.literal(
-                    "No mountain at least " + minimumHeight + " blocks high was found near the located jagged peaks. Highest terrain found: "
+                    "No mountain at least " + minimumHeight + " blocks high was found near the located mountain biome. Highest terrain found: "
                             + bestY + " Y. Try a new area or generate farther away."
             ));
             return 0;
