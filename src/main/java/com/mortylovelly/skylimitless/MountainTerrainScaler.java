@@ -5,13 +5,17 @@ import net.minecraft.registry.tag.BiomeTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkSection;
 
 public final class MountainTerrainScaler {
     private static final int SEA_LEVEL = 63;
     private static final int VANILLA_MOUNTAIN_REFERENCE_Y = 300;
 
     private MountainTerrainScaler() {
+    }
+
+    public static Chunk scaleAndReturn(Chunk chunk) {
+        scale(chunk);
+        return chunk;
     }
 
     public static void scale(Chunk chunk) {
