@@ -5,6 +5,8 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryLoader;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.dimension.DimensionTypes;
+import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
+import net.minecraft.world.gen.chunk.GenerationShapeConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
@@ -27,35 +29,75 @@ public abstract class RegistryLoaderMixin {
             return;
         }
 
-        if (!key.equals(DimensionTypes.OVERWORLD) || !(valueObject instanceof DimensionType original)) {
+        if (key.equals(DimensionTypes.OVERWORLD) && valueObject instanceof DimensionType original) {
+            int height = SkyLimitlessConfig.getEffectiveHeight();
+            int logicalHeight = Math.max(original.logicalHeight(), height);
+
+            if (original.height() == height && original.logicalHeight() == logicalHeight) {
+                return;
+            }
+
+            DimensionType adjusted = new DimensionType(
+                    original.fixedTime(),
+                    original.hasSkyLight(),
+                    original.hasCeiling(),
+                    original.ultrawarm(),
+                    original.natural(),
+                    original.coordinateScale(),
+                    original.bedWorks(),
+                    original.respawnAnchorWorks(),
+                    original.minY(),
+                    height,
+                    logicalHeight,
+                    original.infiniburn(),
+                    original.effects(),
+                    original.ambientLight(),
+                    original.monsterSettings()
+            );
+
+            args.set(1, adjusted);
             return;
         }
 
-        int height = SkyLimitlessConfig.getEffectiveHeight();
-        int logicalHeight = Math.max(original.logicalHeight(), height);
-
-        if (original.height() == height && original.logicalHeight() == logicalHeight) {
+        if (!(valueObject instanceof ChunkGeneratorSettings originalSettings)) {
             return;
         }
 
-        DimensionType adjusted = new DimensionType(
-                original.fixedTime(),
-                original.hasSkyLight(),
-                original.hasCeiling(),
-                original.ultrawarm(),
-                original.natural(),
-                original.coordinateScale(),
-                original.bedWorks(),
-                original.respawnAnchorWorks(),
-                original.minY(),
-                height,
-                logicalHeight,
-                original.infiniburn(),
-                original.effects(),
-                original.ambientLight(),
-                original.monsterSettings()
+        if (!key.equals(ChunkGeneratorSettings.OVERWORLD)
+                && !key.equals(ChunkGeneratorSettings.LARGE_BIOMES)
+                && !key.equals(ChunkGeneratorSettings.AMPLIFIED)) {
+            return;
+        }
+
+        GenerationShapeConfig originalShape = originalSettings.generationShapeConfig();
+        int targetTopY = SkyLimitlessConfig.getEffectiveTopY();
+        int targetHeight = targetTopY - originalShape.minimumY();
+
+        if (targetHeight <= originalShape.height()) {
+            return;
+        }
+
+        GenerationShapeConfig adjustedShape = GenerationShapeConfig.create(
+                originalShape.minimumY(),
+                targetHeight,
+                originalShape.horizontalSize(),
+                originalShape.verticalSize()
         );
 
-        args.set(1, adjusted);
+        ChunkGeneratorSettings adjustedSettings = new ChunkGeneratorSettings(
+                adjustedShape,
+                originalSettings.defaultBlock(),
+                originalSettings.defaultFluid(),
+                originalSettings.noiseRouter(),
+                originalSettings.surfaceRule(),
+                originalSettings.spawnTarget(),
+                originalSettings.seaLevel(),
+                originalSettings.mobGenerationDisabled(),
+                originalSettings.hasAquifers(),
+                originalSettings.oreVeins(),
+                originalSettings.usesLegacyRandom()
+        );
+
+        args.set(1, adjustedSettings);
     }
 }
