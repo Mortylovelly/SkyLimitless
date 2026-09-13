@@ -5,13 +5,14 @@ import com.mojang.datafixers.util.Pair;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
+import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeKeys;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.server.world.ServerWorld;
 
 public final class SkyLimitlessCommand {
     private static final int MOUNTAIN_SEARCH_RADIUS_BLOCKS = 128;
@@ -133,7 +134,7 @@ public final class SkyLimitlessCommand {
     }
 
     private static int findMountain(ServerCommandSource source, int minimumHeight) {
-        if (source.getWorld().getRegistryKey() != net.minecraft.world.World.OVERWORLD) {
+        if (source.getWorld().getRegistryKey() != World.OVERWORLD) {
             source.sendError(Text.literal("High mountain search is available only in the Overworld."));
             return 0;
         }
@@ -190,11 +191,14 @@ public final class SkyLimitlessCommand {
             return 0;
         }
 
-        int teleportY = Math.min(bestY + 2, SkyLimitlessConfig.getHighestPlaceableY() - 1);
+        final int foundY = bestY;
+        final int foundX = bestX;
+        final int foundZ = bestZ;
+        int teleportY = Math.min(foundY + 2, SkyLimitlessConfig.getHighestPlaceableY() - 1);
         source.sendFeedback(() -> Text.literal(
-                "Found a mountain with terrain height " + bestY + " Y at " + bestX + ", " + bestZ + ". Teleporting there."
+                "Found a mountain with terrain height " + foundY + " Y at " + foundX + ", " + foundZ + ". Teleporting there."
         ), false);
-        source.getPlayerOrThrow().teleport(world, bestX + 0.5D, teleportY, bestZ + 0.5D, source.getPlayerOrThrow().getYaw(), source.getPlayerOrThrow().getPitch());
+        source.getPlayerOrThrow().teleport(world, foundX + 0.5D, teleportY, foundZ + 0.5D, source.getPlayerOrThrow().getYaw(), source.getPlayerOrThrow().getPitch());
         return 1;
     }
 }
