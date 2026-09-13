@@ -14,6 +14,9 @@ public final class SkyLimitlessConfig {
     public static final int VANILLA_TOP_Y = 320;
     public static final int MIN_REQUESTED_TOP_Y = VANILLA_TOP_Y;
     public static final int MAX_REQUESTED_TOP_Y = 4000;
+    public static final int MIN_MOUNTAIN_HEIGHT = VANILLA_TOP_Y;
+    public static final int MAX_MOUNTAIN_HEIGHT = 2000;
+    public static final int DEFAULT_MOUNTAIN_HEIGHT = 500;
     public static final int SECTION_SIZE = 16;
 
     private static final Path CONFIG_PATH = FabricLoader.getInstance()
@@ -22,6 +25,7 @@ public final class SkyLimitlessConfig {
 
     private static int requestedTopY = 2000;
     private static int effectiveTopY = 2000;
+    private static int mountainHeight = DEFAULT_MOUNTAIN_HEIGHT;
 
     private SkyLimitlessConfig() {
     }
@@ -32,15 +36,22 @@ public final class SkyLimitlessConfig {
             try (InputStream input = Files.newInputStream(CONFIG_PATH)) {
                 properties.load(input);
                 requestedTopY = parseRequestedTopY(properties.getProperty("requested_top_y"), 2000);
+                mountainHeight = parseMountainHeight(
+                        properties.getProperty("mountain_height"),
+                        DEFAULT_MOUNTAIN_HEIGHT
+                );
             } catch (IOException exception) {
                 SkyLimitless.LOGGER.warn("Could not read config {}; using safe default.", CONFIG_PATH, exception);
                 requestedTopY = 2000;
+                mountainHeight = DEFAULT_MOUNTAIN_HEIGHT;
             }
         } else {
             requestedTopY = 2000;
+            mountainHeight = DEFAULT_MOUNTAIN_HEIGHT;
         }
 
         effectiveTopY = roundTopUpToSection(requestedTopY);
+        mountainHeight = Math.min(mountainHeight, effectiveTopY);
         save();
     }
 
@@ -49,8 +60,26 @@ public final class SkyLimitlessConfig {
             return false;
         }
 
+        if (newTopY < mountainHeight) {
+            return false;
+        }
+
         requestedTopY = newTopY;
         effectiveTopY = roundTopUpToSection(newTopY);
+        save();
+        return true;
+    }
+
+    public static boolean setMountainHeight(int newMountainHeight) {
+        if (newMountainHeight < MIN_MOUNTAIN_HEIGHT || newMountainHeight > MAX_MOUNTAIN_HEIGHT) {
+            return false;
+        }
+
+        if (newMountainHeight > effectiveTopY) {
+            return false;
+        }
+
+        mountainHeight = newMountainHeight;
         save();
         return true;
     }
@@ -69,6 +98,10 @@ public final class SkyLimitlessConfig {
 
     public static int getHighestPlaceableY() {
         return effectiveTopY - 1;
+    }
+
+    public static int getMountainHeight() {
+        return mountainHeight;
     }
 
     public static Path getConfigPath() {
@@ -91,6 +124,22 @@ public final class SkyLimitlessConfig {
         }
     }
 
+    private static int parseMountainHeight(String value, int fallback) {
+        if (value == null) {
+            return fallback;
+        }
+
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            if (parsed < MIN_MOUNTAIN_HEIGHT || parsed > MAX_MOUNTAIN_HEIGHT) {
+                return fallback;
+            }
+            return parsed;
+        } catch (NumberFormatException exception) {
+            return fallback;
+        }
+    }
+
     private static int roundTopUpToSection(int topY) {
         int relativeHeight = topY - MIN_WORLD_Y;
         int sections = (relativeHeight + SECTION_SIZE - 1) / SECTION_SIZE;
@@ -103,11 +152,13 @@ public final class SkyLimitlessConfig {
 
             Properties properties = new Properties();
             properties.setProperty("requested_top_y", Integer.toString(requestedTopY));
+            properties.setProperty("mountain_height", Integer.toString(mountainHeight));
             properties.setProperty("# Effective top Y is rounded upward to a 16-block section boundary", "");
             properties.setProperty("# Vanilla min Y is kept at -64 so existing terrain coordinates do not move", "");
+            properties.setProperty("# Mountain height affects newly generated Overworld terrain only", "");
 
             try (OutputStream output = Files.newOutputStream(CONFIG_PATH)) {
-                properties.store(output, "SkyLimitless world height configuration");
+                properties.store(output, "SkyLimitless world height and mountain configuration");
             }
         } catch (IOException exception) {
             SkyLimitless.LOGGER.error("Could not save config {}", CONFIG_PATH, exception);

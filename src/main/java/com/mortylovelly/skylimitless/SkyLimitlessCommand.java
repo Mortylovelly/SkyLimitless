@@ -24,6 +24,14 @@ public final class SkyLimitlessCommand {
                                                 context.getSource(),
                                                 IntegerArgumentType.getInteger(context, "top_y"))))
                                 .executes(context -> status(context.getSource())))
+                        .then(CommandManager.literal("mountains")
+                                .executes(context -> mountainStatus(context.getSource()))
+                                .then(CommandManager.argument("height", IntegerArgumentType.integer(
+                                                SkyLimitlessConfig.MIN_MOUNTAIN_HEIGHT,
+                                                SkyLimitlessConfig.MAX_MOUNTAIN_HEIGHT))
+                                        .executes(context -> setMountainHeight(
+                                                context.getSource(),
+                                                IntegerArgumentType.getInteger(context, "height")))))
         ));
     }
 
@@ -40,7 +48,26 @@ public final class SkyLimitlessCommand {
         return 1;
     }
 
+    private static int mountainStatus(ServerCommandSource source) {
+        source.sendFeedback(() -> Text.literal(
+                "SkyLimitless mountain height: " + SkyLimitlessConfig.getMountainHeight()
+                        + ", world top Y = " + SkyLimitlessConfig.getEffectiveTopY()
+        ), false);
+        source.sendFeedback(() -> Text.literal(
+                "Mountain height changes apply only to newly generated Overworld chunks."
+        ), false);
+        return 1;
+    }
+
     private static int setHeight(ServerCommandSource source, int topY) {
+        if (topY < SkyLimitlessConfig.getMountainHeight()) {
+            source.sendError(Text.literal(
+                    "World top Y cannot be lower than the current mountain height ("
+                            + SkyLimitlessConfig.getMountainHeight() + ")."
+            ));
+            return 0;
+        }
+
         if (!SkyLimitlessConfig.setRequestedTopY(topY)) {
             source.sendError(Text.literal(
                     "Invalid top Y. Allowed range: "
@@ -58,6 +85,32 @@ public final class SkyLimitlessCommand {
         ), false);
         source.sendFeedback(() -> Text.literal(
                 "Restart the server/world to apply the new height safely. Do not change it while the world is running."
+        ), false);
+        return 1;
+    }
+
+    private static int setMountainHeight(ServerCommandSource source, int height) {
+        if (height > SkyLimitlessConfig.getEffectiveTopY()) {
+            source.sendError(Text.literal(
+                    "Cannot set mountain height to " + height + ": it is above the current world height limit ("
+                            + SkyLimitlessConfig.getEffectiveTopY() + ")."
+            ));
+            return 0;
+        }
+
+        if (!SkyLimitlessConfig.setMountainHeight(height)) {
+            source.sendError(Text.literal(
+                    "Invalid mountain height. Allowed range: "
+                            + SkyLimitlessConfig.MIN_MOUNTAIN_HEIGHT
+                            + "-"
+                            + SkyLimitlessConfig.MAX_MOUNTAIN_HEIGHT + "."
+            ));
+            return 0;
+        }
+
+        source.sendFeedback(() -> Text.literal(
+                "Saved SkyLimitless mountain height: " + height
+                        + ". It will affect newly generated Overworld chunks after the next world restart."
         ), false);
         return 1;
     }
