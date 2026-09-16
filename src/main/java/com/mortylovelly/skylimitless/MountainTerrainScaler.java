@@ -19,6 +19,11 @@ public final class MountainTerrainScaler {
     }
 
     public static void scale(Chunk chunk) {
+        // Disabled intentionally. The implementation remains in the project,
+        // but mountain generation must stay completely vanilla for now.
+        return;
+
+        /*
         int targetHeight = SkyLimitlessConfig.getMountainHeight();
         if (targetHeight <= SkyLimitlessConfig.VANILLA_TOP_Y) {
             return;
@@ -85,5 +90,6 @@ public final class MountainTerrainScaler {
         }
 
         chunk.refreshSurfaceY();
+        */
     }
 }
