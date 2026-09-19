@@ -14,21 +14,14 @@ public final class SkyLimitlessConfig {
     public static final int MIN_WORLD_Y = -64;
     public static final int VANILLA_TOP_Y = 320;
 
-    /**
-     * 2000 is the protected default world top Y.
+    /*
+     * Minecraft 1.20.1 cannot place the Overworld ceiling above Y=2031
+     * while keeping the existing min Y of -64. Y=2032 is therefore the
+     * highest valid top boundary (highest placeable block is Y=2031).
      */
-    public static final int DEFAULT_REQUESTED_TOP_Y = 5000;
-
-    /**
-     * 10000 is the hard upper safety limit for this mod.
-     */
-    public static final int MAX_REQUESTED_TOP_Y = 10000;
-
+    public static final int DEFAULT_REQUESTED_TOP_Y = 2000;
+    public static final int MAX_REQUESTED_TOP_Y = 2032;
     public static final int MIN_REQUESTED_TOP_Y = VANILLA_TOP_Y;
-
-    public static final int MIN_MOUNTAIN_HEIGHT = VANILLA_TOP_Y;
-    public static final int MAX_MOUNTAIN_HEIGHT = 2000;
-    public static final int DEFAULT_MOUNTAIN_HEIGHT = 500;
     public static final int SECTION_SIZE = 16;
 
     private static final String REQUESTED_TOP_Y_PROPERTY = "requested_top_y";
@@ -40,7 +33,6 @@ public final class SkyLimitlessConfig {
 
     private static int requestedTopY = DEFAULT_REQUESTED_TOP_Y;
     private static int effectiveTopY = DEFAULT_REQUESTED_TOP_Y;
-    private static int mountainHeight = DEFAULT_MOUNTAIN_HEIGHT;
 
     private SkyLimitlessConfig() {
     }
@@ -62,10 +54,10 @@ public final class SkyLimitlessConfig {
                 );
 
                 /*
-                 * requested_top_y is never trusted by itself.
-                 * The command writes both values together. If another config,
-                 * mod, or manual edit changes only requested_top_y, SkyLimitless
-                 * restores the last command-authorized height.
+                 * The command writes requested_top_y and authorized_top_y
+                 * together. The authorized value is the source of truth.
+                 * Invalid/old values above the 1.20.1 engine limit are ignored
+                 * and safely restored to the default.
                  */
                 if (requestedFromFile != authorizedTopY) {
                     requestedTopY = authorizedTopY;
@@ -78,11 +70,6 @@ public final class SkyLimitlessConfig {
                 } else {
                     requestedTopY = authorizedTopY;
                 }
-
-                mountainHeight = parseMountainHeight(
-                        properties.getProperty("mountain_height"),
-                        DEFAULT_MOUNTAIN_HEIGHT
-                );
             } catch (IOException exception) {
                 SkyLimitless.LOGGER.warn(
                         "Could not read config {}; restoring safe default top Y={}.",
@@ -91,15 +78,12 @@ public final class SkyLimitlessConfig {
                         exception
                 );
                 requestedTopY = DEFAULT_REQUESTED_TOP_Y;
-                mountainHeight = DEFAULT_MOUNTAIN_HEIGHT;
             }
         } else {
             requestedTopY = DEFAULT_REQUESTED_TOP_Y;
-            mountainHeight = DEFAULT_MOUNTAIN_HEIGHT;
         }
 
         effectiveTopY = roundTopUpToSection(requestedTopY);
-        mountainHeight = Math.min(mountainHeight, effectiveTopY);
         save();
     }
 
@@ -109,34 +93,15 @@ public final class SkyLimitlessConfig {
         }
 
         /*
-         * Lowering an existing world height can hide or invalidate already
-         * built terrain above the new ceiling. Height can therefore only be
-         * increased through the normal command path.
+         * Lowering an existing world height can hide already generated terrain,
+         * so the manual command only allows increases.
          */
         if (newTopY < requestedTopY) {
             return false;
         }
 
-        if (newTopY < mountainHeight) {
-            return false;
-        }
-
         requestedTopY = newTopY;
         effectiveTopY = roundTopUpToSection(newTopY);
-        save();
-        return true;
-    }
-
-    public static boolean setMountainHeight(int newMountainHeight) {
-        if (newMountainHeight < MIN_MOUNTAIN_HEIGHT || newMountainHeight > MAX_MOUNTAIN_HEIGHT) {
-            return false;
-        }
-
-        if (newMountainHeight > effectiveTopY) {
-            return false;
-        }
-
-        mountainHeight = newMountainHeight;
         save();
         return true;
     }
@@ -155,10 +120,6 @@ public final class SkyLimitlessConfig {
 
     public static int getHighestPlaceableY() {
         return effectiveTopY - 1;
-    }
-
-    public static int getMountainHeight() {
-        return mountainHeight;
     }
 
     public static Path getConfigPath() {
@@ -208,22 +169,6 @@ public final class SkyLimitlessConfig {
         }
     }
 
-    private static int parseMountainHeight(String value, int fallback) {
-        if (value == null) {
-            return fallback;
-        }
-
-        try {
-            int parsed = Integer.parseInt(value.trim());
-            if (parsed < MIN_MOUNTAIN_HEIGHT || parsed > MAX_MOUNTAIN_HEIGHT) {
-                return fallback;
-            }
-            return parsed;
-        } catch (NumberFormatException exception) {
-            return fallback;
-        }
-    }
-
     private static int roundTopUpToSection(int topY) {
         int relativeHeight = topY - MIN_WORLD_Y;
         int sections = (relativeHeight + SECTION_SIZE - 1) / SECTION_SIZE;
@@ -237,9 +182,16 @@ public final class SkyLimitlessConfig {
             Properties properties = new Properties();
             properties.setProperty(REQUESTED_TOP_Y_PROPERTY, Integer.toString(requestedTopY));
             properties.setProperty(AUTHORIZED_TOP_Y_PROPERTY, Integer.toString(requestedTopY));
-            properties.setProperty("mountain_height", Integer.toString(mountainHeight));
             properties.setProperty(
-                    "# Height is command-authorized; other worldgen configs cannot lower or raise it",
+                    "# Maximum valid top Y for Minecraft 1.20.1 with min Y -64",
+                    "2032"
+            );
+            properties.setProperty(
+                    "# Highest placeable block at the maximum is Y=2031",
+                    ""
+            );
+            properties.setProperty(
+                    "# Height is command-authorized; other worldgen configs cannot override it",
                     ""
             );
             properties.setProperty(
@@ -250,13 +202,9 @@ public final class SkyLimitlessConfig {
                     "# Vanilla min Y is kept at -64 so existing terrain coordinates do not move",
                     ""
             );
-            properties.setProperty(
-                    "# Mountain height affects newly generated Overworld terrain only",
-                    ""
-            );
 
             try (OutputStream output = Files.newOutputStream(CONFIG_PATH)) {
-                properties.store(output, "SkyLimitless protected world height and mountain configuration");
+                properties.store(output, "SkyLimitless protected world height configuration");
             }
         } catch (IOException exception) {
             SkyLimitless.LOGGER.error("Could not save config {}", CONFIG_PATH, exception);
