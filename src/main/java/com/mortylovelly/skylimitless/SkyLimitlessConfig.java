@@ -13,7 +13,7 @@ public final class SkyLimitlessConfig {
     public static final int MIN_WORLD_Y = -64;
     public static final int VANILLA_TOP_Y = 320;
     public static final int MIN_REQUESTED_TOP_Y = VANILLA_TOP_Y;
-    public static final int MAX_REQUESTED_TOP_Y = 10000;
+    public static final int MAX_REQUESTED_TOP_Y = 4000;
     public static final int SECTION_SIZE = 16;
 
     private static final Path CONFIG_PATH = FabricLoader.getInstance()
@@ -37,7 +37,7 @@ public final class SkyLimitlessConfig {
                 requestedTopY = 500;
             }
         } else {
-            requestedTopY = 5000;
+            requestedTopY = 500;
         }
 
         effectiveTopY = roundTopUpToSection(requestedTopY);
