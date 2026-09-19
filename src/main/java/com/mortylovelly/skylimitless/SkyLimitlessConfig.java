@@ -17,7 +17,7 @@ public final class SkyLimitlessConfig {
     /**
      * 2000 is the protected default world top Y.
      */
-    public static final int DEFAULT_REQUESTED_TOP_Y = 2000;
+    public static final int DEFAULT_REQUESTED_TOP_Y = 5000;
 
     /**
      * 10000 is the hard upper safety limit for this mod.
