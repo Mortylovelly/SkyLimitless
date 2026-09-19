@@ -37,7 +37,7 @@ public final class SkyLimitlessConfig {
                 requestedTopY = 5000;
             }
         } else {
-            requestedTopY = 500;
+            requestedTopY = 5000;
         }
 
         effectiveTopY = roundTopUpToSection(requestedTopY);
