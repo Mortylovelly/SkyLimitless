@@ -3,7 +3,7 @@
   "id": "skylimitless",
   "version": "${version}",
   "name": "SkyLimitless",
-  "description": "Raises the Minecraft world height limit and adds configurable taller vanilla Overworld mountains for newly generated terrain.",
+  "description": "Raises and protects the Overworld world height independently of world-generation configuration.",
   "authors": [
     "Mortylovelly"
   ],

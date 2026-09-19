@@ -62,7 +62,12 @@ public final class SkyLimitlessCommand {
                         + ", height = " + SkyLimitlessConfig.getEffectiveHeight()
         ), false);
         source.sendFeedback(() -> Text.literal(
-                "Active world height is fixed for this server session. Restart the server after changing it."
+                "Protected world height: it cannot be changed by Tectonic or other worldgen configs. "
+                        + "Only /skylimitless height <Y> can change it, and only upward for safety."
+        ), false);
+        source.sendFeedback(() -> Text.literal(
+                "Hard maximum top Y = " + SkyLimitlessConfig.MAX_REQUESTED_TOP_Y
+                        + ". Restart the server after changing the height."
         ), false);
         return 1;
     }
@@ -79,6 +84,17 @@ public final class SkyLimitlessCommand {
     }
 
     private static int setHeight(ServerCommandSource source, int topY) {
+        int currentTopY = SkyLimitlessConfig.getRequestedTopY();
+
+        if (topY < currentTopY) {
+            source.sendError(Text.literal(
+                    "SkyLimitless will not lower the world height from "
+                            + currentTopY + " to " + topY + " because that can hide or damage existing terrain above the new ceiling. "
+                            + "The normal height command can only increase the limit."
+            ));
+            return 0;
+        }
+
         if (topY < SkyLimitlessConfig.getMountainHeight()) {
             source.sendError(Text.literal(
                     "World top Y cannot be lower than the current mountain height ("
@@ -98,12 +114,12 @@ public final class SkyLimitlessCommand {
         }
 
         source.sendFeedback(() -> Text.literal(
-                "Saved SkyLimitless height: requested top Y = " + topY
+                "Saved protected SkyLimitless height: requested top Y = " + topY
                         + ", effective top Y after restart = " + SkyLimitlessConfig.getEffectiveTopY()
                         + " (highest placeable Y = " + SkyLimitlessConfig.getHighestPlaceableY() + ")."
         ), false);
         source.sendFeedback(() -> Text.literal(
-                "Restart the server/world to apply the new height safely. Do not change it while the world is running."
+                "Tectonic's max_y cannot overwrite this world limit. Restart the server/world to apply the new height safely."
         ), false);
         return 1;
     }
@@ -199,7 +215,14 @@ public final class SkyLimitlessCommand {
         source.sendFeedback(() -> Text.literal(
                 "Found a mountain with terrain height " + foundY + " Y at " + foundX + ", " + foundZ + ". Teleporting there."
         ), false);
-        source.getPlayerOrThrow().teleport(world, foundX + 0.5D, teleportY, foundZ + 0.5D, source.getPlayerOrThrow().getYaw(), source.getPlayerOrThrow().getPitch());
+        source.getPlayerOrThrow().teleport(
+                world,
+                foundX + 0.5D,
+                teleportY,
+                foundZ + 0.5D,
+                source.getPlayerOrThrow().getYaw(),
+                source.getPlayerOrThrow().getPitch()
+        );
         return 1;
     }
 }

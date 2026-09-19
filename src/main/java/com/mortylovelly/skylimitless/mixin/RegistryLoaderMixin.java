@@ -31,30 +31,10 @@ public abstract class RegistryLoaderMixin {
             return;
         }
 
-        int height = SkyLimitlessConfig.getEffectiveHeight();
-        int logicalHeight = Math.max(original.logicalHeight(), height);
-
-        if (original.height() == height && original.logicalHeight() == logicalHeight) {
+        DimensionType adjusted = SkyLimitlessConfig.createAdjustedDimensionType(original);
+        if (adjusted == original) {
             return;
         }
-
-        DimensionType adjusted = new DimensionType(
-                original.fixedTime(),
-                original.hasSkyLight(),
-                original.hasCeiling(),
-                original.ultrawarm(),
-                original.natural(),
-                original.coordinateScale(),
-                original.bedWorks(),
-                original.respawnAnchorWorks(),
-                original.minY(),
-                height,
-                logicalHeight,
-                original.infiniburn(),
-                original.effects(),
-                original.ambientLight(),
-                original.monsterSettings()
-        );
 
         args.set(1, adjusted);
     }
