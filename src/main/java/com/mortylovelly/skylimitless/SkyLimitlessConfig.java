@@ -13,14 +13,14 @@ public final class SkyLimitlessConfig {
     public static final int MIN_WORLD_Y = -64;
     public static final int VANILLA_TOP_Y = 320;
     public static final int MIN_REQUESTED_TOP_Y = VANILLA_TOP_Y;
-    public static final int MAX_REQUESTED_TOP_Y = 4000;
+    public static final int MAX_REQUESTED_TOP_Y = 5000;
     public static final int SECTION_SIZE = 16;
 
     private static final Path CONFIG_PATH = FabricLoader.getInstance()
             .getConfigDir()
             .resolve("skylimitless.properties");
 
-    private static int requestedTopY = 500;
+    private static int requestedTopY = 5000;
     private static int effectiveTopY = 512;
 
     private SkyLimitlessConfig() {
@@ -31,10 +31,10 @@ public final class SkyLimitlessConfig {
         if (Files.exists(CONFIG_PATH)) {
             try (InputStream input = Files.newInputStream(CONFIG_PATH)) {
                 properties.load(input);
-                requestedTopY = parseRequestedTopY(properties.getProperty("requested_top_y"), 500);
+                requestedTopY = parseRequestedTopY(properties.getProperty("requested_top_y"), 5000);
             } catch (IOException exception) {
                 SkyLimitless.LOGGER.warn("Could not read config {}; using safe default.", CONFIG_PATH, exception);
-                requestedTopY = 500;
+                requestedTopY = 5000;
             }
         } else {
             requestedTopY = 500;
