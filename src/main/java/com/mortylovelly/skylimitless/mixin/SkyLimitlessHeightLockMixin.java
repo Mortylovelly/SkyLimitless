@@ -47,13 +47,26 @@ public abstract class SkyLimitlessHeightLockMixin {
                 return;
             }
 
-            ((RegistryEntryReferenceAccessor<DimensionType>) (Object) reference).skylimitless$setValue(adjusted);
+            /*
+             * Keep the registered DimensionType object itself. Replacing the value
+             * inside RegistryEntry.Reference after registry loading leaves the
+             * registry's reverse value-to-key lookup pointing at the old object.
+             * The login packet then fails while serializing registry data.
+             *
+             * Mutating the existing record fields mirrors the safe approach used
+             * by world-generation mods that adjust DimensionType after loading.
+             */
+            int previousHeight = original.height();
+            DimensionTypeAccessor accessor = (DimensionTypeAccessor) (Object) original;
+            accessor.skylimitless$setMinY(adjusted.minY());
+            accessor.skylimitless$setHeight(adjusted.height());
+            accessor.skylimitless$setLogicalHeight(adjusted.logicalHeight());
 
             SkyLimitless.LOGGER.info(
                     "SkyLimitless locked the Overworld world height at top Y={} (effective height={}), overriding the loaded DimensionType height of {}.",
                     SkyLimitlessConfig.getEffectiveTopY(),
                     SkyLimitlessConfig.getEffectiveHeight(),
-                    original.height()
+                    previousHeight
             );
         } catch (RuntimeException exception) {
             SkyLimitless.LOGGER.error(
